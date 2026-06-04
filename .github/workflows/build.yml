@@ -1,7 +1,7 @@
 name: Build OpenThread RCP for Pro Micro
 
 on:
-  workflow_dispatch: # Manuel tetikleme için
+  workflow_dispatch:
 
 jobs:
   build:
@@ -10,11 +10,10 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      # 1. Zephyr derleme ortamı ve ARM Toolchain kurulumu
+      # 1. Zephyr derleme ortamı ve ARM Toolchain kurulumu (Klasör takibini serbest bıraktık)
       - name: Setup Zephyr Project Environment
         uses: zephyrproject-rtos/action-zephyr-setup@v1
         with:
-          app-path: coprocessor
           toolchains: arm-zephyr-eabi
 
       # 2. Zephyr ve Bağımlılıkların İndirilmesi
@@ -24,7 +23,7 @@ jobs:
           west update
           west zephyr-export
 
-      # 3. Pro Micro nRF52840 için RCP Uygulamasının Tam Dizin Tanımlarıyla Derlenmesi
+      # 3. Pro Micro nRF52840 için RCP Uygulaması Derleme Komutu
       - name: Run West Build
         run: |
           west build -p always -b promicro_nrf52840 zephyr/samples/net/openthread/coprocessor -- \
@@ -32,7 +31,7 @@ jobs:
             -DCONFIG_OPENTHREAD_NORDIC_LIBRARY_MASTER=y \
             -DCONF_FILE="${GITHUB_WORKSPACE}/coprocessor/prj.conf" \
             -DDTC_OVERLAY_FILE="${GITHUB_WORKSPACE}/coprocessor/boards/promicro_nrf52840.overlay"
-            
+
       # 4. Üretilen .uf2 firmware dosyasının yüklenmesi
       - name: Upload UF2 Artifact
         uses: actions/upload-artifact@v4
