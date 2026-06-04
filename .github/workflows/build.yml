@@ -3,10 +3,6 @@ name: Build OpenThread RCP for Pro Micro
 on:
   workflow_dispatch: # Manuel tetikleme için
 
-# Node 24 geçiş uyarısını çözmek ve derleyiciyi zorlamak için küresel çevre değişkeni
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -21,21 +17,22 @@ jobs:
           app-path: coprocessor
           toolchains: arm-zephyr-eabi
 
-      # 2. Zephyr v3.6.0 ve Bağımlılıkların İndirilmesi
+      # 2. Zephyr ve Bağımlılıkların İndirilmesi
       - name: Initialize West and Dependencies
         run: |
           west init -m https://github.com --mr v3.6.0
           west update
           west zephyr-export
 
-      # 3. Klasör yapısının doğrulanması ve derleme (Dizin karmaşasını önler)
+      # 3. Pro Micro nRF52840 için RCP Uygulamasının Tam Dizin Tanımlarıyla Derlenmesi
       - name: Run West Build
         run: |
-          west build -p always -b promicro_nrf52840 coprocessor -- \
+          west build -p always -b promicro_nrf52840 zephyr/samples/net/openthread/coprocessor -- \
             -DCONFIG_BUILD_OUTPUT_UF2=y \
             -DCONFIG_OPENTHREAD_NORDIC_LIBRARY_MASTER=y \
-            -DEXTRA_CONF_FILE="${GITHUB_WORKSPACE}/coprocessor/prj.conf"
-
+            -DCONF_FILE="${GITHUB_WORKSPACE}/coprocessor/prj.conf" \
+            -DDTC_OVERLAY_FILE="${GITHUB_WORKSPACE}/coprocessor/boards/promicro_nrf52840.overlay"
+            
       # 4. Üretilen .uf2 firmware dosyasının yüklenmesi
       - name: Upload UF2 Artifact
         uses: actions/upload-artifact@v4
