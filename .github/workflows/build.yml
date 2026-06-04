@@ -1,8 +1,11 @@
-
 name: Build OpenThread RCP for Pro Micro
 
 on:
-  workflow_dispatch: # GitHub arayüzünden manuel olarak başlatabilmek için
+  workflow_dispatch: # Manuel tetikleme için
+
+# Node 24 geçiş uyarısını çözmek ve derleyiciyi zorlamak için küresel çevre değişkeni
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   build:
@@ -18,14 +21,14 @@ jobs:
           app-path: coprocessor
           toolchains: arm-zephyr-eabi
 
-      # 2. Zephyr v3.6.0 (Kararlı Sürüm) ve Bağımlılıkların İndirilmesi
+      # 2. Zephyr v3.6.0 ve Bağımlılıkların İndirilmesi
       - name: Initialize West and Dependencies
         run: |
           west init -m https://github.com --mr v3.6.0
           west update
           west zephyr-export
 
-      # 3. Pro Micro nRF52840 için RCP Uygulamasının Derlenmesi
+      # 3. Klasör yapısının doğrulanması ve derleme (Dizin karmaşasını önler)
       - name: Run West Build
         run: |
           west build -p always -b promicro_nrf52840 coprocessor -- \
