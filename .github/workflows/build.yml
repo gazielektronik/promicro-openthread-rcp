@@ -1,1 +1,41 @@
 
+name: Build OpenThread RCP for Pro Micro
+
+on:
+  workflow_dispatch: # GitHub arayüzünden manuel olarak başlatabilmek için
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 1. Zephyr derleme ortamı ve ARM Toolchain kurulumu
+      - name: Setup Zephyr Project Environment
+        uses: zephyrproject-rtos/action-zephyr-setup@v1
+        with:
+          app-path: coprocessor
+          toolchains: arm-zephyr-eabi
+
+      # 2. Zephyr v3.6.0 (Kararlı Sürüm) ve Bağımlılıkların İndirilmesi
+      - name: Initialize West and Dependencies
+        run: |
+          west init -m https://github.com --mr v3.6.0
+          west update
+          west zephyr-export
+
+      # 3. Pro Micro nRF52840 için RCP Uygulamasının Derlenmesi
+      - name: Run West Build
+        run: |
+          west build -p always -b promicro_nrf52840 coprocessor -- \
+            -DCONFIG_BUILD_OUTPUT_UF2=y \
+            -DCONFIG_OPENTHREAD_NORDIC_LIBRARY_MASTER=y \
+            -DEXTRA_CONF_FILE="${GITHUB_WORKSPACE}/coprocessor/prj.conf"
+
+      # 4. Üretilen .uf2 firmware dosyasının yüklenmesi
+      - name: Upload UF2 Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ProMicro-OpenThread-RCP-Firmware
+          path: build/zephyr/zephyr.uf2
